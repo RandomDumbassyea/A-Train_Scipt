@@ -1,5 +1,5 @@
---cool little script that copies A-Train from The Boys
---if someone uses this (unlikely) at least give credit to me, thanks!
+-- cool lil a-train script, inspired from the boys
+-- don't forget to credit me if your using it for something, thanks!
 
 return (function()
     local player = game.Players.LocalPlayer
@@ -11,7 +11,6 @@ return (function()
     local RunService = game:GetService("RunService")
     local Camera = workspace.CurrentCamera
 
-    -- Effect Setup
     local blur = Lighting:FindFirstChild("SpeedBlur") or Instance.new("DepthOfFieldEffect", Lighting)
     blur.Name = "SpeedBlur"; blur.Enabled = false; blur.FarIntensity = 0.5; blur.InFocusRadius = 10
 
@@ -24,8 +23,12 @@ return (function()
     local isZooming = false
     local isEffectActive = false 
 
+    -- Define params ONCE to save memory
+    local params = OverlapParams.new()
+    params.FilterDescendantsInstances = {char}
+    params.FilterType = Enum.RaycastFilterType.Exclude
+
     if _G.ATrainActive then
-        -- DISABLE
         _G.ATrainActive = false; hum.WalkSpeed = 16
         if _G.HeartbeatConnection then _G.HeartbeatConnection:Disconnect() end
         
@@ -33,20 +36,17 @@ return (function()
         TweenService:Create(Camera, TweenInfo.new(0.5), {FieldOfView = 70}):Play()
         TweenService:Create(cc, TweenInfo.new(0.5), {Saturation = 0}):Play()
 
-        -- Play STOP sound
         local s = Instance.new("Sound", root)
-        s.SoundId = CANT_STOP_ID
-        s:Play()
+        s.SoundId = CANT_STOP_ID; s:Play()
         game:GetService("Debris"):AddItem(s, 5)
     else
-        -- ENABLE
         _G.ATrainActive = true; hum.WalkSpeed = 250
         
         _G.HeartbeatConnection = RunService.Heartbeat:Connect(function()
             local speed = root.AssemblyLinearVelocity.Magnitude
             local isMoving = speed > 5
 
-            -- 1. VISUAL STATE LOGIC
+            -- 1. VISUAL STATE
             if isMoving and not isEffectActive then
                 isEffectActive = true
                 blur.Enabled = true; cc.Enabled = true
@@ -59,36 +59,28 @@ return (function()
                 TweenService:Create(cc, TweenInfo.new(0.3), {Saturation = 0}):Play()
             end
 
-            -- HITBOX LOGIC 
-        _G.HitboxConnection = RunService.Heartbeat:Connect(function()
-            local params = OverlapParams.new()
-            params.FilterDescendantsInstances = {char}
-            
-            -- Scan a 5x5 area around your character
+            -- 2. HITBOX LOGIC
             local parts = workspace:GetPartsInPart(root, params)
             for _, p in pairs(parts) do
-                -- Check if it's a player
-                if p.Parent:FindFirstChild("Humanoid") and p.Parent ~= char then
-                    local enemyRoot = p.Parent:FindFirstChild("HumanoidRootPart")
+                local model = p.Parent
+                if model:FindFirstChild("Humanoid") and model ~= char then
+                    local enemyRoot = model:FindFirstChild("HumanoidRootPart")
                     if enemyRoot then
-                        -- Fling them forward based on your current direction
                         enemyRoot.AssemblyLinearVelocity = root.CFrame.LookVector * 150
                     end
                 end
             end
-        end)
 
-           -- 2. SOUND LOGIC (Latch-based) because the other kept replaying
+            -- 3. SOUND LOGIC
             if isMoving then
                 if not isZooming then
-                    isZooming = true -- Latch set: Sound won't play again
+                    isZooming = true
                     local zoom = Instance.new("Sound", root)
-                    zoom.SoundId = ZOOM_ID
-                    zoom:Play()
+                    zoom.SoundId = ZOOM_ID; zoom:Play()
                     game:GetService("Debris"):AddItem(zoom, 5)
                 end
             else
-                isZooming = false -- Reset: Allows the sound to play again next time
+                isZooming = false
             end
         end)
     end

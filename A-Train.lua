@@ -63,7 +63,7 @@ return (function()
         local zoom = Instance.new("Sound", root)
         zoom.Name = "ZoomSound"
         zoom.SoundId = ZOOM_ID
-        zoom.Looped = false -- Looping makes it feel more like a constant zoom
+        zoom.Looped = false 
         
         -- Link everything to movement
         _G.ZoomConnection = hum.Running:Connect(function(speed)

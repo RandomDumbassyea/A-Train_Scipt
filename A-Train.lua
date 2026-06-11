@@ -59,17 +59,17 @@ return (function()
                 TweenService:Create(cc, TweenInfo.new(0.3), {Saturation = 0}):Play()
             end
 
-            -- 2. SOUND LOGIC
-            if isMoving and not isZooming then
-                isZooming = true
-                local zoom = Instance.new("Sound", root)
-                zoom.SoundId = ZOOM_ID
-                zoom:Play()
-                game:GetService("Debris"):AddItem(zoom, 5)
-                
-                -- Cooldown: Allows sound to trigger again after 2 seconds
-                task.wait(2) 
-                isZooming = false
+           -- 2. SOUND LOGIC (Latch-based) because the other kept replaying
+            if isMoving then
+                if not isZooming then
+                    isZooming = true -- Latch set: Sound won't play again
+                    local zoom = Instance.new("Sound", root)
+                    zoom.SoundId = ZOOM_ID
+                    zoom:Play()
+                    game:GetService("Debris"):AddItem(zoom, 5)
+                end
+            else
+                isZooming = false -- Reset: Allows the sound to play again next time
             end
         end)
     end

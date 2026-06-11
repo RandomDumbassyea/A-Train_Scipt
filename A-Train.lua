@@ -7,75 +7,74 @@ return (function()
     local root = char:WaitForChild("HumanoidRootPart")
     local hum = char:WaitForChild("Humanoid")
     local Lighting = game:GetService("Lighting")
+    local TweenService = game:GetService("TweenService")
+    local RunService = game:GetService("RunService")
+    local Camera = workspace.CurrentCamera
 
-    -- Blur 
-    local blur = Lighting:FindFirstChild("SpeedBlur")
-    if not blur then
-        blur = Instance.new("DepthOfFieldEffect", Lighting)
-        blur.Name = "SpeedBlur"
-        blur.FarIntensity = 0.5
-        blur.InFocusRadius = 10
-        blur.Enabled = false
-    end
+    -- effects
+    local blur = Lighting:FindFirstChild("SpeedBlur") or Instance.new("DepthOfFieldEffect", Lighting)
+    blur.Name = "SpeedBlur"; blur.Enabled = false; blur.FarIntensity = 0.5; blur.InFocusRadius = 10
 
-    -- Particles
+    local cc = Lighting:FindFirstChild("TimeStop") or Instance.new("ColorCorrectionEffect", Lighting)
+    cc.Name = "TimeStop"; cc.Enabled = false; cc.Saturation = 0
+
     local function createTrail(part)
-        local attachment = Instance.new("Attachment", part)
-        local p = Instance.new("ParticleEmitter", attachment)
-        p.Name = "SpeedTrail"
-        p.Texture = "rbxassetid://6031093370"
-        p.Rate = 50
-        p.Lifetime = NumberRange.new(0.5)
-        p.Enabled = false
+        local att = Instance.new("Attachment", part)
+        local p = Instance.new("ParticleEmitter", att)
+        p.Texture = "rbxassetid://6031093370"; p.Rate = 50; p.Lifetime = NumberRange.new(0.5); p.Enabled = false
         return p
     end
-
-    -- Ensure legs exist before adding trails
     local leftTrail = char:FindFirstChild("Left Leg") and createTrail(char["Left Leg"])
     local rightTrail = char:FindFirstChild("Right Leg") and createTrail(char["Right Leg"])
 
     local ZOOM_ID = "rbxassetid://77807683763606" 
     local CANT_STOP_ID = "rbxassetid://125117454142800"
+    local lastSoundTime = 0
 
     if _G.ATrainActive then
         -- DISABLE MODE
-        _G.ATrainActive = false
-        hum.WalkSpeed = 16
-        
-        -- Stop everything
-        blur.Enabled = false
+        _G.ATrainActive = false; hum.WalkSpeed = 16
+        blur.Enabled = false; cc.Enabled = false
         if leftTrail then leftTrail.Enabled = false end
         if rightTrail then rightTrail.Enabled = false end
         if _G.ZoomConnection then _G.ZoomConnection:Disconnect() end
-        if root:FindFirstChild("ZoomSound") then root.ZoomSound:Destroy() end
+        if _G.HitboxConnection then _G.HitboxConnection:Disconnect() end
+        
+        TweenService:Create(Camera, TweenInfo.new(0.5), {FieldOfView = 70}):Play()
+        TweenService:Create(cc, TweenInfo.new(0.5), {Saturation = 0}):Play()
 
-        -- Play Stop Sound
-        local s = Instance.new("Sound", root)
-        s.SoundId = CANT_STOP_ID
-        s:Play()
+        local s = Instance.new("Sound", root); s.SoundId = CANT_STOP_ID; s:Play()
         s.Ended:Connect(function() s:Destroy() end)
     else
         -- ENABLE MODE
-        _G.ATrainActive = true
-        hum.WalkSpeed = 250
-        
-        -- Create the sound once
-        local zoom = Instance.new("Sound", root)
-        zoom.Name = "ZoomSound"
-        zoom.SoundId = ZOOM_ID
-        zoom.Looped = false 
-        
-        -- Link everything to movement
+        _G.ATrainActive = true; hum.WalkSpeed = 250
+        cc.Enabled = true
+        TweenService:Create(Camera, TweenInfo.new(0.5), {FieldOfView = 110}):Play()
+        TweenService:Create(cc, TweenInfo.new(0.5), {Saturation = -1}):Play()
+
+        -- Hitbox logic
+        _G.HitboxConnection = RunService.Heartbeat:Connect(function()
+            local params = OverlapParams.new(); params.FilterDescendantsInstances = {char}
+            local parts = workspace:GetPartsInPart(root, params)
+            for _, p in pairs(parts) do
+                if p.Parent:FindFirstChild("Humanoid") and p.Parent ~= char then
+                    p.Parent.HumanoidRootPart.AssemblyLinearVelocity = root.CFrame.LookVector * 100
+                end
+            end
+        end)
+
+        -- Movement/Sound Logic
         _G.ZoomConnection = hum.Running:Connect(function(speed)
             local isMoving = speed > 0.5
             blur.Enabled = isMoving
             if leftTrail then leftTrail.Enabled = isMoving end
             if rightTrail then rightTrail.Enabled = isMoving end
             
-            if isMoving then
-                if not zoom.IsPlaying then zoom:Play() end
-            else
-                zoom:Pause()
+            if isMoving and (tick() - lastSoundTime > 3) then
+                lastSoundTime = tick()
+                local zoom = Instance.new("Sound", root)
+                zoom.SoundId = ZOOM_ID; zoom.PlayOnRemove = true; zoom:Play()
+                game:GetService("Debris"):AddItem(zoom, 5)
             end
         end)
     end

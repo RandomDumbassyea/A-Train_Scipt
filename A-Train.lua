@@ -15,7 +15,7 @@ return (function()
     blur.Name = "SpeedBlur"; blur.Enabled = false; blur.FarIntensity = 0.5; blur.InFocusRadius = 10
 
     local cc = Lighting:FindFirstChild("TimeStop") or Instance.new("ColorCorrectionEffect", Lighting)
-    cc.Name = "TimeStop"; cc.Enabled = false; cc.Saturation = 0
+    cc.Name = "TimeStop"; cc.Enabled = false; cc.Saturation = 2
 
     local ZOOM_ID = "rbxassetid://77807683763606" 
     local CANT_STOP_ID = "rbxassetid://125117454142800"

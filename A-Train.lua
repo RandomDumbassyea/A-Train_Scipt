@@ -59,6 +59,25 @@ return (function()
                 TweenService:Create(cc, TweenInfo.new(0.3), {Saturation = 0}):Play()
             end
 
+            -- HITBOX LOGIC 
+        _G.HitboxConnection = RunService.Heartbeat:Connect(function()
+            local params = OverlapParams.new()
+            params.FilterDescendantsInstances = {char}
+            
+            -- Scan a 5x5 area around your character
+            local parts = workspace:GetPartsInPart(root, params)
+            for _, p in pairs(parts) do
+                -- Check if it's a player
+                if p.Parent:FindFirstChild("Humanoid") and p.Parent ~= char then
+                    local enemyRoot = p.Parent:FindFirstChild("HumanoidRootPart")
+                    if enemyRoot then
+                        -- Fling them forward based on your current direction
+                        enemyRoot.AssemblyLinearVelocity = root.CFrame.LookVector * 150
+                    end
+                end
+            end
+        end)
+
            -- 2. SOUND LOGIC (Latch-based) because the other kept replaying
             if isMoving then
                 if not isZooming then

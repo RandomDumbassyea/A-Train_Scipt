@@ -8,7 +8,8 @@ return (function()
     local hum = char:WaitForChild("Humanoid")
     local Lighting = game:GetService("Lighting")
 
-if not Lighting:FindFirstChild("SpeedBlur") then
+local blur = Lighting:FindFirstChild("SpeedBlur")
+if not blur then
     local blur = Instance.new("DepthOfFieldEffect", Lighting)
     blur.Name = "SpeedBlur"
     blur.FarIntensity = 0.5
@@ -36,6 +37,7 @@ end
     if _G.ATrainActive then
         _G.ATrainActive = false
         hum.WalkSpeed = 16
+        blur.Enabled = false
         if _G.ZoomConnection then _G.ZoomConnection:Disconnect() end
         if root:FindFirstChild("ZoomSound") then root.ZoomSound:Destroy() end
 
@@ -50,6 +52,7 @@ end
     else
         _G.ATrainActive = true
         hum.WalkSpeed = 250
+        blur.Enabled = true
         
         Lighting.Speedblur.Enabled = true
         if leftTrail then leftTrail.Enabled = true end
